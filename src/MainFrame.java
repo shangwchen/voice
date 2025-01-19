@@ -6,6 +6,12 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Vector;
+import java.util.*;
+import java.util.List;
 
 class MainFrame extends JFrame {
     private String[] labels = {"主音色", "辅助音色", "听感反馈", " ", "发展音色", "攻受属性", "声音色系", "听感年龄", "听感身高", "推荐音伴", "声音评级"};
@@ -722,9 +728,9 @@ class MainFrame extends JFrame {
     }
 
     private Rectangle lastPopupBounds = new Rectangle(100, 100, 300, 200);
-
     private JFrame popupFrame = null; // 用于记录当前的弹窗实例
     private int activeTextFieldIndex = -1; // 用于跟踪当前激活的文本框索引
+    private Map<String, List<String>> wordCategories = new LinkedHashMap<>(); // 用于存储词语分类及词语列表
 
     private void addTextFieldPopupFunctionality() {
         for (int i = 0; i < textFields.length; i++) {
@@ -749,29 +755,94 @@ class MainFrame extends JFrame {
             return;
         }
 
+        // 初始化分类数据（如果为空）
+        if (wordCategories.isEmpty()) {
+            wordCategories.put("常用词", new ArrayList<>(Arrays.asList("甜美", "磁性", "温暖", "清脆", "柔和")));
+        }
+
         // 创建一个新窗口
         popupFrame = new JFrame("选择一个词语");
         popupFrame.setSize(lastPopupBounds.width, lastPopupBounds.height);
         popupFrame.setLocation(lastPopupBounds.x, lastPopupBounds.y);
-        popupFrame.setLayout(new FlowLayout());
+        popupFrame.setLayout(new BorderLayout());
 
-        // 添加一些示例词语
-        String[] words = {"甜美", "磁性", "温暖", "清脆", "柔和"};
-        for (String word : words) {
-            JButton wordButton = new JButton(word);
-            popupFrame.add(wordButton);
+        // 分类列表
+        JList<String> categoryList = new JList<>(new Vector<>(wordCategories.keySet()));
+        categoryList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        categoryList.setSelectedIndex(0);
 
-            // 点击词语按钮时将其添加到当前激活的文本框
-            wordButton.addActionListener(e -> {
-                if (activeTextFieldIndex >= 0 && activeTextFieldIndex < textFields.length) {
-                    String currentText = textFields[activeTextFieldIndex].getText();
-                    if (!currentText.isEmpty()) {
-                        currentText += ", ";
-                    }
-                    textFields[activeTextFieldIndex].setText(currentText + word);
+        // 词语按钮区域
+        JPanel wordPanel = new JPanel(new FlowLayout());
+        updateWordPanel(wordPanel, categoryList.getSelectedValue());
+
+        // 分类切换
+        categoryList.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                updateWordPanel(wordPanel, categoryList.getSelectedValue());
+            }
+        });
+
+        // 工具栏（添加和删除功能）
+        JPanel toolBar = new JPanel(new FlowLayout());
+        JButton addWordButton = new JButton("添加词语");
+        JButton removeWordButton = new JButton("删除词语");
+        JButton addCategoryButton = new JButton("添加分类");
+        JButton removeCategoryButton = new JButton("删除分类");
+
+        // 添加词语
+        addWordButton.addActionListener(e -> {
+            String newWord = JOptionPane.showInputDialog(popupFrame, "输入新词语：");
+            if (newWord != null && !newWord.trim().isEmpty()) {
+                String selectedCategory = categoryList.getSelectedValue();
+                if (selectedCategory != null) {
+                    wordCategories.get(selectedCategory).add(newWord);
+                    updateWordPanel(wordPanel, selectedCategory);
                 }
-            });
-        }
+            }
+        });
+
+        // 删除词语
+        removeWordButton.addActionListener(e -> {
+            String selectedCategory = categoryList.getSelectedValue();
+            if (selectedCategory != null) {
+                String wordToRemove = JOptionPane.showInputDialog(popupFrame, "输入要删除的词语：");
+                if (wordToRemove != null && wordCategories.get(selectedCategory).remove(wordToRemove)) {
+                    updateWordPanel(wordPanel, selectedCategory);
+                } else {
+                    JOptionPane.showMessageDialog(popupFrame, "词语不存在！", "错误", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        // 添加分类
+        addCategoryButton.addActionListener(e -> {
+            String newCategory = JOptionPane.showInputDialog(popupFrame, "输入新分类名称：");
+            if (newCategory != null && !newCategory.trim().isEmpty() && !wordCategories.containsKey(newCategory)) {
+                wordCategories.put(newCategory, new ArrayList<>());
+                categoryList.setListData(new Vector<>(wordCategories.keySet()));
+            }
+        });
+
+        // 删除分类
+        removeCategoryButton.addActionListener(e -> {
+            String selectedCategory = categoryList.getSelectedValue();
+            if (selectedCategory != null && wordCategories.containsKey(selectedCategory)) {
+                wordCategories.remove(selectedCategory);
+                categoryList.setListData(new Vector<>(wordCategories.keySet()));
+                wordPanel.removeAll();
+                wordPanel.revalidate();
+                wordPanel.repaint();
+            }
+        });
+
+        toolBar.add(addWordButton);
+        toolBar.add(removeWordButton);
+        toolBar.add(addCategoryButton);
+        toolBar.add(removeCategoryButton);
+
+        popupFrame.add(new JScrollPane(categoryList), BorderLayout.WEST);
+        popupFrame.add(new JScrollPane(wordPanel), BorderLayout.CENTER);
+        popupFrame.add(toolBar, BorderLayout.SOUTH);
 
         // 在弹窗关闭时记录其位置和大小
         popupFrame.addComponentListener(new ComponentAdapter() {
@@ -793,4 +864,28 @@ class MainFrame extends JFrame {
 
         popupFrame.setVisible(true);
     }
+
+    private void updateWordPanel(JPanel wordPanel, String category) {
+        wordPanel.removeAll();
+        if (category != null && wordCategories.containsKey(category)) {
+            for (String word : wordCategories.get(category)) {
+                JButton wordButton = new JButton(word);
+                wordPanel.add(wordButton);
+
+                // 点击词语按钮时将其添加到当前激活的文本框
+                wordButton.addActionListener(e -> {
+                    if (activeTextFieldIndex >= 0 && activeTextFieldIndex < textFields.length) {
+                        String currentText = textFields[activeTextFieldIndex].getText();
+                        if (!currentText.isEmpty()) {
+                            currentText += ", ";
+                        }
+                        textFields[activeTextFieldIndex].setText(currentText + word);
+                    }
+                });
+            }
+        }
+        wordPanel.revalidate();
+        wordPanel.repaint();
+    }
+
 }
