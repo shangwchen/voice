@@ -723,6 +723,8 @@ class MainFrame extends JFrame {
 
     private Rectangle lastPopupBounds = new Rectangle(100, 100, 300, 200);
 
+    private JFrame popupFrame = null; // 用于记录当前的弹窗实例
+
     private void addTextFieldPopupFunctionality() {
         for (int i = 0; i < textFields.length; i++) {
             final int index = i; // 用于捕获当前文本框索引
@@ -730,7 +732,9 @@ class MainFrame extends JFrame {
                 @Override
                 public void mouseClicked(MouseEvent e) {
                     if (SwingUtilities.isLeftMouseButton(e)) {
-                        showWordSelectionPopup(index);
+                        if (popupFrame == null || !popupFrame.isVisible()) {
+                            showWordSelectionPopup(index);
+                        }
                     }
                 }
             });
@@ -738,8 +742,13 @@ class MainFrame extends JFrame {
     }
 
     private void showWordSelectionPopup(int textFieldIndex) {
+        // 如果弹窗已存在且可见，则不重新创建
+        if (popupFrame != null && popupFrame.isVisible()) {
+            return;
+        }
+
         // 创建一个新窗口
-        JFrame popupFrame = new JFrame("选择一个词语");
+        popupFrame = new JFrame("选择一个词语");
         popupFrame.setSize(lastPopupBounds.width, lastPopupBounds.height);
         popupFrame.setLocation(lastPopupBounds.x, lastPopupBounds.y);
         popupFrame.setLayout(new FlowLayout());
@@ -752,8 +761,11 @@ class MainFrame extends JFrame {
 
             // 点击词语按钮时将其添加到对应文本框
             wordButton.addActionListener(e -> {
-                textFields[textFieldIndex].setText(word);
-                popupFrame.dispose(); // 关闭窗口
+                String currentText = textFields[textFieldIndex].getText();
+                if (!currentText.isEmpty()) {
+                    currentText += ", ";
+                }
+                textFields[textFieldIndex].setText(currentText + word);
             });
         }
 
@@ -767,6 +779,11 @@ class MainFrame extends JFrame {
             @Override
             public void componentResized(ComponentEvent e) {
                 lastPopupBounds = popupFrame.getBounds();
+            }
+
+            @Override
+            public void componentHidden(ComponentEvent e) {
+                popupFrame = null; // 重置弹窗引用
             }
         });
 
