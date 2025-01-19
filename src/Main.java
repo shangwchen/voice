@@ -11,7 +11,7 @@ public class Main {
 }
 
 class MainFrame extends JFrame {
-    private String[] labels = {"主音色", "辅助音色", "听感反馈", "发展音色", "攻受属性", "声音色系", "听感年龄", "听感身高", "推荐音伴", "声音评级"};
+    private String[] labels = {"主音色", "辅助音色", "听感反馈", " ", "发展音色", "攻受属性", "声音色系", "听感年龄", "听感身高", "推荐音伴", "声音评级"};
     private JTextField[] textFields;
     private JLabel[] labelComponents;
     private int labelTextFieldSpacing = 5;
@@ -420,17 +420,19 @@ class MainFrame extends JFrame {
         if (sizeStr != null && !sizeStr.isEmpty()) {
             try {
                 int size = Integer.parseInt(sizeStr);
-                Font font = new Font("Default", Font.PLAIN, 20);
+                Font font = new Font("Default", Font.PLAIN, size);
 
                 for (JTextField textField : textFields) {
                     textField.setFont(font);
-                    textField.setForeground(Color.WHITE);
 
                     // 动态调整文本框大小
                     FontMetrics fm = textField.getFontMetrics(font);
                     int textHeight = fm.getHeight();
                     int textWidth = fm.charWidth('W') * 15; // 假设默认宽度为15个字符宽度
-                    textField.setPreferredSize(new Dimension(textWidth, textHeight + 5)); // 调整尺寸，增加一些间距
+                    textField.setPreferredSize(new Dimension(textWidth, textHeight + 5));
+
+                    // 强制更新文本框的实际大小
+                    textField.setSize(new Dimension(textWidth, textHeight + 5));
                 }
 
                 // 刷新布局
@@ -441,6 +443,7 @@ class MainFrame extends JFrame {
             }
         }
     }
+
 
 
     private void setLabelFontSize() {
