@@ -219,7 +219,7 @@ class MainFrame extends JFrame {
         clearButton.addActionListener(e -> clearInputs());
         layeredPane.add(clearButton, JLayeredPane.PALETTE_LAYER);
 
-
+        addTextFieldPopupFunctionality();
 
         JMenuBar menuBar = new JMenuBar();
 
@@ -552,6 +552,8 @@ class MainFrame extends JFrame {
         }
     }
 
+
+
     private void setFontSize() {
         String sizeStr = JOptionPane.showInputDialog(this, "输入字体大小：", "设置字体大小", JOptionPane.PLAIN_MESSAGE);
         if (sizeStr != null && !sizeStr.isEmpty(
@@ -634,6 +636,44 @@ class MainFrame extends JFrame {
             }
         }
     }
+
+    private void addTextFieldPopupFunctionality() {
+        for (int i = 0; i < textFields.length; i++) {
+            final int index = i; // 用于捕获当前文本框索引
+            textFields[i].addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if (SwingUtilities.isLeftMouseButton(e)) {
+                        showWordSelectionPopup(index);
+                    }
+                }
+            });
+        }
+    }
+
+    private void showWordSelectionPopup(int textFieldIndex) {
+        // 创建一个新窗口
+        JFrame popupFrame = new JFrame("选择一个词语");
+        popupFrame.setSize(300, 200);
+        popupFrame.setLayout(new FlowLayout());
+
+        // 添加一些示例词语
+        String[] words = {"甜美", "磁性", "温暖", "清脆", "柔和"};
+        for (String word : words) {
+            JButton wordButton = new JButton(word);
+            popupFrame.add(wordButton);
+
+            // 点击词语按钮时将其添加到对应文本框
+            wordButton.addActionListener(e -> {
+                textFields[textFieldIndex].setText(word);
+                popupFrame.dispose(); // 关闭窗口
+            });
+        }
+
+        popupFrame.setLocationRelativeTo(this); // 将窗口显示在主窗口中心
+        popupFrame.setVisible(true);
+    }
+
 
 
     private void addDraggableImage(JLayeredPane layeredPane) {
