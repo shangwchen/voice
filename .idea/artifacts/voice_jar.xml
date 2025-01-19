@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="voice:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/voice_jar</output-path>
+    <root id="archive" name="voice.jar">
+      <element id="module-output" name="voice" />
+      <element id="dir-copy" path="$PROJECT_DIR$/src/resource" />
+    </root>
+  </artifact>
+</component>
