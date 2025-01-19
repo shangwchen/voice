@@ -637,45 +637,6 @@ class MainFrame extends JFrame {
         }
     }
 
-    private void addTextFieldPopupFunctionality() {
-        for (int i = 0; i < textFields.length; i++) {
-            final int index = i; // 用于捕获当前文本框索引
-            textFields[i].addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    if (SwingUtilities.isLeftMouseButton(e)) {
-                        showWordSelectionPopup(index);
-                    }
-                }
-            });
-        }
-    }
-
-    private void showWordSelectionPopup(int textFieldIndex) {
-        // 创建一个新窗口
-        JFrame popupFrame = new JFrame("选择一个词语");
-        popupFrame.setSize(300, 200);
-        popupFrame.setLayout(new FlowLayout());
-
-        // 添加一些示例词语
-        String[] words = {"甜美", "磁性", "温暖", "清脆", "柔和"};
-        for (String word : words) {
-            JButton wordButton = new JButton(word);
-            popupFrame.add(wordButton);
-
-            // 点击词语按钮时将其添加到对应文本框
-            wordButton.addActionListener(e -> {
-                textFields[textFieldIndex].setText(word);
-                popupFrame.dispose(); // 关闭窗口
-            });
-        }
-
-        popupFrame.setLocationRelativeTo(this); // 将窗口显示在主窗口中心
-        popupFrame.setVisible(true);
-    }
-
-
-
     private void addDraggableImage(JLayeredPane layeredPane) {
         JFileChooser fileChooser = new JFileChooser();
         int result = fileChooser.showOpenDialog(this);
@@ -758,5 +719,57 @@ class MainFrame extends JFrame {
             layeredPane.add(imageLabel, JLayeredPane.DRAG_LAYER);
             layeredPane.repaint();
         }
+    }
+
+    private Rectangle lastPopupBounds = new Rectangle(100, 100, 300, 200);
+
+    private void addTextFieldPopupFunctionality() {
+        for (int i = 0; i < textFields.length; i++) {
+            final int index = i; // 用于捕获当前文本框索引
+            textFields[i].addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if (SwingUtilities.isLeftMouseButton(e)) {
+                        showWordSelectionPopup(index);
+                    }
+                }
+            });
+        }
+    }
+
+    private void showWordSelectionPopup(int textFieldIndex) {
+        // 创建一个新窗口
+        JFrame popupFrame = new JFrame("选择一个词语");
+        popupFrame.setSize(lastPopupBounds.width, lastPopupBounds.height);
+        popupFrame.setLocation(lastPopupBounds.x, lastPopupBounds.y);
+        popupFrame.setLayout(new FlowLayout());
+
+        // 添加一些示例词语
+        String[] words = {"甜美", "磁性", "温暖", "清脆", "柔和"};
+        for (String word : words) {
+            JButton wordButton = new JButton(word);
+            popupFrame.add(wordButton);
+
+            // 点击词语按钮时将其添加到对应文本框
+            wordButton.addActionListener(e -> {
+                textFields[textFieldIndex].setText(word);
+                popupFrame.dispose(); // 关闭窗口
+            });
+        }
+
+        // 在弹窗关闭时记录其位置和大小
+        popupFrame.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentMoved(ComponentEvent e) {
+                lastPopupBounds = popupFrame.getBounds();
+            }
+
+            @Override
+            public void componentResized(ComponentEvent e) {
+                lastPopupBounds = popupFrame.getBounds();
+            }
+        });
+
+        popupFrame.setVisible(true);
     }
 }
