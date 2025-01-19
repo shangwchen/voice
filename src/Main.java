@@ -1,6 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.Properties;
 
@@ -20,6 +21,7 @@ class MainFrame extends JFrame {
     private SettingsManager settingsManager = new SettingsManager();
     private JLabel toggleImageLabel; // 用于显示/隐藏图片的 JLabel
     private boolean isImageVisible = false; // 用于记录图片是否可见
+    private Image originalImage;
 
 
 
@@ -156,9 +158,10 @@ class MainFrame extends JFrame {
         String imagePath = "src/resource/111.png"; // 替换为图片路径
         ImageIcon icon = new ImageIcon(imagePath);
 
-        if (icon.getIconWidth() > 0 && icon.getIconHeight() > 0) { // 确保图片加载成功
-            toggleImageLabel.setIcon(icon); // 不进行缩放，保留原始大小
-            toggleImageLabel.setBounds(200, 600, icon.getIconWidth(), icon.getIconHeight()); // 使用原始宽高设置位置和大小
+        if (icon.getIconWidth() > 0 && icon.getIconHeight() > 0) {
+            originalImage = icon.getImage(); // 保存原始图片
+            toggleImageLabel.setIcon(icon);
+            toggleImageLabel.setBounds(200, 600, icon.getIconWidth(), icon.getIconHeight());
         } else {
             System.err.println("图片加载失败，请检查路径：" + imagePath);
         }
@@ -174,15 +177,15 @@ class MainFrame extends JFrame {
 
         toggleImageLabel.addMouseMotionListener(new MouseMotionAdapter() {
             private boolean resizing = false; // 标记是否正在调整大小
+            private double aspectRatio = 0.9; // 存储图片的原始宽高比
 
             @Override
             public void mouseMoved(MouseEvent e) {
-                // 检测鼠标是否在右下角（用于调整大小）
                 if (e.getX() >= toggleImageLabel.getWidth() - 10 && e.getY() >= toggleImageLabel.getHeight() - 10) {
-                    toggleImageLabel.setCursor(Cursor.getPredefinedCursor(Cursor.SE_RESIZE_CURSOR)); // 设置为调整大小光标
+                    toggleImageLabel.setCursor(Cursor.getPredefinedCursor(Cursor.SE_RESIZE_CURSOR));
                     resizing = true;
                 } else {
-                    toggleImageLabel.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR)); // 设置为拖动光标
+                    toggleImageLabel.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
                     resizing = false;
                 }
             }
@@ -190,20 +193,17 @@ class MainFrame extends JFrame {
             @Override
             public void mouseDragged(MouseEvent e) {
                 if (resizing) {
-                    // 调整大小逻辑
                     int newWidth = e.getX();
-                    int newHeight = e.getY();
+                    int newHeight = (int) (newWidth / aspectRatio);
 
                     if (newWidth > 50 && newHeight > 50) { // 设置最小宽高
                         toggleImageLabel.setSize(newWidth, newHeight);
 
-                        // 重新设置缩放后的图片
-                        ImageIcon originalIcon = (ImageIcon) toggleImageLabel.getIcon();
-                        Image scaledImage = originalIcon.getImage().getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH);
+                        // 使用原始图片重新缩放
+                        Image scaledImage = getScaledImage(originalImage, newWidth, newHeight);
                         toggleImageLabel.setIcon(new ImageIcon(scaledImage));
                     }
                 } else {
-                    // 拖动图片逻辑
                     int thisX = toggleImageLabel.getLocation().x;
                     int thisY = toggleImageLabel.getLocation().y;
 
@@ -297,6 +297,17 @@ class MainFrame extends JFrame {
         }
     }
 
+    private Image getScaledImage(Image srcImg, int width, int height) {
+        BufferedImage resizedImg = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = resizedImg.createGraphics();
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.drawImage(srcImg, 0, 0, width, height, null);
+        g2.dispose();
+        return resizedImg;
+    }
+
 
     private void saveInputs() {
         JFileChooser fileChooser = new JFileChooser();
@@ -320,6 +331,12 @@ class MainFrame extends JFrame {
     private void toggleImage() {
         isImageVisible = !isImageVisible; // 切换图片可见性状态
         toggleImageLabel.setVisible(isImageVisible); // 显示或隐藏图片
+        if (isImageVisible) {
+            // 将图片调整到最上层
+            JLayeredPane layeredPane = (JLayeredPane) toggleImageLabel.getParent();
+            layeredPane.setLayer(toggleImageLabel, JLayeredPane.DRAG_LAYER);
+            layeredPane.repaint();
+        }
     }
 
     private void addDefaultImage(JLayeredPane layeredPane) {
