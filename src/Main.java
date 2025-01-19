@@ -18,6 +18,8 @@ class MainFrame extends JFrame {
     private Point initialClick;
     private JLabel headerLabel;
     private SettingsManager settingsManager = new SettingsManager();
+    private JLabel toggleImageLabel; // 用于显示/隐藏图片的 JLabel
+    private boolean isImageVisible = false; // 用于记录图片是否可见
 
 
 
@@ -134,6 +136,88 @@ class MainFrame extends JFrame {
 
         layeredPane.add(inputPanel, JLayeredPane.DEFAULT_LAYER);
 
+        // 添加显示/隐藏图片的按钮
+        JButton toggleImageButton = new JButton("显示/隐藏图片");
+        toggleImageButton.setBounds(140, getHeight() - 90, 150, 30); // 设置按钮位置和大小
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                toggleImageButton.setBounds(140, getHeight() - 100, 150, 30);
+            }
+        });
+
+// 添加按钮事件
+        toggleImageButton.addActionListener(e -> toggleImage());
+        layeredPane.add(toggleImageButton, JLayeredPane.PALETTE_LAYER);
+
+// 添加图片组件（初始隐藏）
+        toggleImageLabel = new JLabel();
+        toggleImageLabel.setVisible(false); // 初始隐藏
+        String imagePath = "src/resource/111.png"; // 替换为图片路径
+        ImageIcon icon = new ImageIcon(imagePath);
+
+        if (icon.getIconWidth() > 0 && icon.getIconHeight() > 0) { // 确保图片加载成功
+            toggleImageLabel.setIcon(icon); // 不进行缩放，保留原始大小
+            toggleImageLabel.setBounds(200, 600, icon.getIconWidth(), icon.getIconHeight()); // 使用原始宽高设置位置和大小
+        } else {
+            System.err.println("图片加载失败，请检查路径：" + imagePath);
+        }
+
+        layeredPane.add(toggleImageLabel, JLayeredPane.DEFAULT_LAYER);
+
+        toggleImageLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                initialClick = e.getPoint(); // 记录鼠标点击的初始位置
+            }
+        });
+
+        toggleImageLabel.addMouseMotionListener(new MouseMotionAdapter() {
+            private boolean resizing = false; // 标记是否正在调整大小
+
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                // 检测鼠标是否在右下角（用于调整大小）
+                if (e.getX() >= toggleImageLabel.getWidth() - 10 && e.getY() >= toggleImageLabel.getHeight() - 10) {
+                    toggleImageLabel.setCursor(Cursor.getPredefinedCursor(Cursor.SE_RESIZE_CURSOR)); // 设置为调整大小光标
+                    resizing = true;
+                } else {
+                    toggleImageLabel.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR)); // 设置为拖动光标
+                    resizing = false;
+                }
+            }
+
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (resizing) {
+                    // 调整大小逻辑
+                    int newWidth = e.getX();
+                    int newHeight = e.getY();
+
+                    if (newWidth > 50 && newHeight > 50) { // 设置最小宽高
+                        toggleImageLabel.setSize(newWidth, newHeight);
+
+                        // 重新设置缩放后的图片
+                        ImageIcon originalIcon = (ImageIcon) toggleImageLabel.getIcon();
+                        Image scaledImage = originalIcon.getImage().getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH);
+                        toggleImageLabel.setIcon(new ImageIcon(scaledImage));
+                    }
+                } else {
+                    // 拖动图片逻辑
+                    int thisX = toggleImageLabel.getLocation().x;
+                    int thisY = toggleImageLabel.getLocation().y;
+
+                    int xMoved = e.getX() - initialClick.x;
+                    int yMoved = e.getY() - initialClick.y;
+
+                    int X = thisX + xMoved;
+                    int Y = thisY + yMoved;
+
+                    toggleImageLabel.setLocation(X, Y);
+                }
+            }
+        });
+
         // 添加一键清除按钮
         JButton clearButton = new JButton("一键清除");
         clearButton.setBounds(10, getHeight() - 90, 120, 30);
@@ -231,6 +315,11 @@ class MainFrame extends JFrame {
                 JOptionPane.showMessageDialog(this, "保存失败！", "错误", JOptionPane.ERROR_MESSAGE);
             }
         }
+    }
+
+    private void toggleImage() {
+        isImageVisible = !isImageVisible; // 切换图片可见性状态
+        toggleImageLabel.setVisible(isImageVisible); // 显示或隐藏图片
     }
 
     private void addDefaultImage(JLayeredPane layeredPane) {
