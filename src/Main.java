@@ -36,6 +36,9 @@ class MainFrame extends JFrame {
         JLayeredPane layeredPane = new JLayeredPane();
         layeredPane.setLayout(null);
 
+        // 添加默认图片
+        addDefaultImage(layeredPane);
+
         headerLabel = new JLabel("你不好奇自己的声音吗", JLabel.LEADING);
         headerLabel.setFont(new Font("Serif", Font.BOLD, 30));
         headerLabel.setHorizontalAlignment(SwingConstants.LEFT);
@@ -229,6 +232,58 @@ class MainFrame extends JFrame {
             }
         }
     }
+
+    private void addDefaultImage(JLayeredPane layeredPane) {
+        String imagePath = "src/resource/000.jpg"; // 替换为图片的实际路径
+        ImageIcon icon = new ImageIcon(imagePath);
+
+        if (icon.getIconWidth() > 0 && icon.getIconHeight() > 0) { // 确保图片加载成功
+            // 设置默认尺寸（宽度和高度）
+            int defaultWidth = 180;  // 替换为你希望的宽度
+            int defaultHeight = 200; // 替换为你希望的高度
+
+            // 缩放图片到默认大小
+            Image scaledImage = icon.getImage().getScaledInstance(defaultWidth, defaultHeight, Image.SCALE_SMOOTH);
+            ImageIcon scaledIcon = new ImageIcon(scaledImage);
+
+            JLabel imageLabel = new JLabel(scaledIcon);
+
+            // 设置图片初始位置和大小
+            imageLabel.setBounds(30, 560, defaultWidth, defaultHeight);
+            imageLabel.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
+
+            // 添加鼠标拖动功能
+            imageLabel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    initialClick = e.getPoint();
+                }
+            });
+
+            imageLabel.addMouseMotionListener(new MouseMotionAdapter() {
+                @Override
+                public void mouseDragged(MouseEvent e) {
+                    int thisX = imageLabel.getLocation().x;
+                    int thisY = imageLabel.getLocation().y;
+
+                    int xMoved = e.getX() - initialClick.x;
+                    int yMoved = e.getY() - initialClick.y;
+
+                    int X = thisX + xMoved;
+                    int Y = thisY + yMoved;
+
+                    imageLabel.setLocation(X, Y);
+                }
+            });
+
+            // 将图片添加到图层面板
+            layeredPane.add(imageLabel, JLayeredPane.DEFAULT_LAYER);
+        } else {
+            System.err.println("图片加载失败，请检查路径：" + imagePath);
+        }
+    }
+
+
 
     private void editLabels() {
         String[] options = {"编辑标签", "添加新标签", "删除标签"};
