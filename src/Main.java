@@ -22,7 +22,7 @@ class MainFrame extends JFrame {
 
 
     public MainFrame() {
-        setTitle("软件界面");
+        setTitle("温野（声鉴）");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(600, 600);
         setLayout(new BorderLayout());
@@ -35,7 +35,7 @@ class MainFrame extends JFrame {
         layeredPane.setLayout(null);
 
         headerLabel = new JLabel("你不好奇自己的声音吗", JLabel.LEADING);
-        headerLabel.setFont(new Font("Serif", Font.BOLD, 24));
+        headerLabel.setFont(new Font("Serif", Font.BOLD, 30));
         headerLabel.setHorizontalAlignment(SwingConstants.LEFT);
         headerLabel.setForeground(Color.WHITE);
         headerLabel.setBounds(10, 10, 380, 30);
@@ -105,6 +105,9 @@ class MainFrame extends JFrame {
 
             JTextField textField = new JTextField();
             textField.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+            textField.setFont(new Font("Default", Font.PLAIN, 20));
+            textField.setForeground(Color.WHITE);
+            textField.setBackground(Color.BLACK);
             textFields[i] = textField;
             labelComponents[i] = label;
 
@@ -132,7 +135,7 @@ class MainFrame extends JFrame {
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                clearButton.setBounds(10, getHeight() - 70, 120, 30);
+                clearButton.setBounds(10, getHeight() - 100, 120, 30);
             }
         });
         clearButton.addActionListener(e -> clearInputs());
