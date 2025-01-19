@@ -17,28 +17,42 @@ class MainFrame extends JFrame {
     private int labelTextFieldSpacing = 5;
     private Point initialClick;
     private JLabel headerLabel;
-    private SettingsManager settingsManager;
+    private SettingsManager settingsManager = new SettingsManager();
+    private JButton clearButton;
+
 
 
 
     public MainFrame() {
-        setTitle("温野（声鉴）");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(600, 600);
-        setLayout(new BorderLayout());
+        settingsManager = new SettingsManager(); // 初始化设置管理器
+
+        // 加载窗口设置
+        int width = Integer.parseInt(settingsManager.getSetting("windowWidth", "600"));
+        int height = Integer.parseInt(settingsManager.getSetting("windowHeight", "600"));
+        setSize(width, height);
+
+        int x = Integer.parseInt(settingsManager.getSetting("windowX", "100"));
+        int y = Integer.parseInt(settingsManager.getSetting("windowY", "100"));
+        setLocation(x, y);
 
         // 设置背景颜色
-        getContentPane().setBackground(Color.BLACK);
+        String bgColorValue = settingsManager.getSetting("bgColor", String.valueOf(Color.BLACK.getRGB()));
+        Color bgColor = new Color(Integer.parseInt(bgColorValue));
+        getContentPane().setBackground(bgColor);
 
-        // 添加顶部文字，可拖动，始终在最上方
+        setTitle("温野（声鉴）");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        // 添加顶部文字
         JLayeredPane layeredPane = new JLayeredPane();
         layeredPane.setLayout(null);
 
-        headerLabel = new JLabel("你不好奇自己的声音吗", JLabel.LEADING);
+        headerLabel = new JLabel(settingsManager.getSetting("headerText", "你不好奇自己的声音吗"), JLabel.LEADING);
         headerLabel.setFont(new Font("Serif", Font.BOLD, 30));
         headerLabel.setHorizontalAlignment(SwingConstants.LEFT);
         headerLabel.setForeground(Color.WHITE);
-        headerLabel.setBounds(10, 10, 380, 30);
+        headerLabel.setBounds(60, 60, 380, 30);
         headerLabel.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
 
         headerLabel.addMouseListener(new MouseAdapter() {
@@ -68,42 +82,20 @@ class MainFrame extends JFrame {
 
         JPanel inputPanel = new JPanel();
         inputPanel.setLayout(new GridBagLayout());
-        inputPanel.setBackground(Color.BLACK);
-        inputPanel.setBounds(0, 50, 400, 450);
-        inputPanel.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
-
-        inputPanel.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
-                initialClick = e.getPoint();
-            }
-        });
-
-        inputPanel.addMouseMotionListener(new MouseMotionAdapter() {
-            @Override
-            public void mouseDragged(MouseEvent e) {
-                int thisX = inputPanel.getLocation().x;
-                int thisY = inputPanel.getLocation().y;
-
-                int xMoved = e.getX() - initialClick.x;
-                int yMoved = e.getY() - initialClick.y;
-
-                int X = thisX + xMoved;
-                int Y = thisY + yMoved;
-
-                inputPanel.setLocation(X, Y);
-            }
-        });
+        inputPanel.setBackground(bgColor);
+        inputPanel.setBounds(60, 100, 400, 450);
 
         textFields = new JTextField[labels.length];
         labelComponents = new JLabel[labels.length];
 
         for (int i = 0; i < labels.length; i++) {
+            labels[i] = settingsManager.getSetting("label" + i, labels[i]);
+
             JLabel label = new JLabel(labels[i]);
             label.setForeground(Color.WHITE); // 设置字体颜色
-            label.setFont(new Font("Default", Font.PLAIN, 25)); // 设置默认字体大小为 25
+            label.setFont(new Font("Default", Font.PLAIN, 25));
 
-            JTextField textField = new JTextField();
+            JTextField textField = new JTextField(settingsManager.getSetting("textField" + i, ""));
             textField.setBorder(BorderFactory.createLineBorder(Color.BLACK));
             textField.setFont(new Font("Default", Font.PLAIN, 20));
             textField.setForeground(Color.WHITE);
@@ -112,7 +104,6 @@ class MainFrame extends JFrame {
             labelComponents[i] = label;
 
             GridBagConstraints gbc = new GridBagConstraints();
-
             gbc.gridx = 0;
             gbc.gridy = i;
             gbc.anchor = GridBagConstraints.EAST;
@@ -129,22 +120,12 @@ class MainFrame extends JFrame {
 
         layeredPane.add(inputPanel, JLayeredPane.DEFAULT_LAYER);
 
-        // 添加一键清除按钮
         JButton clearButton = new JButton("一键清除");
         clearButton.setBounds(10, getHeight() - 90, 120, 30);
-        addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                clearButton.setBounds(10, getHeight() - 100, 120, 30);
-            }
-        });
         clearButton.addActionListener(e -> clearInputs());
         layeredPane.add(clearButton, JLayeredPane.PALETTE_LAYER);
 
-
-
         JMenuBar menuBar = new JMenuBar();
-
         JMenu optionsMenu = new JMenu("选项");
 
         JMenuItem saveItem = new JMenuItem("保存");
@@ -187,19 +168,41 @@ class MainFrame extends JFrame {
         headerSizeItem.addActionListener(e -> setHeaderTextSize());
         optionsMenu.add(headerSizeItem);
 
-        JMenuItem addImageMenuItem = new JMenuItem("添加图片");
-        addImageMenuItem.addActionListener(e -> addDraggableImage(layeredPane));
-        optionsMenu.add(addImageMenuItem);
-
-        JMenuItem editLabelItem = new JMenuItem("编辑标签内容");
-        editLabelItem.addActionListener(e -> editLabels());
-        optionsMenu.add(editLabelItem);
-
-
         menuBar.add(optionsMenu);
         setJMenuBar(menuBar);
 
         add(layeredPane, BorderLayout.CENTER);
+
+        // 设置关闭窗口时保存设置
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                saveSettings();
+            }
+        });
+    }
+
+
+    // 保存当前设置
+    private void saveSettings() {
+        settingsManager.setSetting("windowWidth", String.valueOf(getWidth()));
+        settingsManager.setSetting("windowHeight", String.valueOf(getHeight()));
+        settingsManager.setSetting("windowX", String.valueOf(getX()));
+        settingsManager.setSetting("windowY", String.valueOf(getY()));
+
+        // 保存背景颜色
+        settingsManager.setSetting("bgColor", String.valueOf(getContentPane().getBackground().getRGB()));
+
+        // 保存顶部文字
+        settingsManager.setSetting("headerText", headerLabel.getText());
+
+        // 保存标签和文本框内容
+        for (int i = 0; i < labels.length; i++) {
+            settingsManager.setSetting("label" + i, labels[i]);
+            settingsManager.setSetting("textField" + i, textFields[i].getText());
+        }
+
+        settingsManager.saveSettings();
     }
 
     private void clearInputs() {
@@ -417,7 +420,9 @@ class MainFrame extends JFrame {
 
     private void setFontSize() {
         String sizeStr = JOptionPane.showInputDialog(this, "输入字体大小：", "设置字体大小", JOptionPane.PLAIN_MESSAGE);
-        if (sizeStr != null && !sizeStr.isEmpty()) {
+        if (sizeStr != null && !sizeStr.isEmpty(
+
+        )) {
             try {
                 int size = Integer.parseInt(sizeStr);
                 Font font = new Font("Default", Font.PLAIN, size);
