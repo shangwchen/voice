@@ -724,6 +724,7 @@ class MainFrame extends JFrame {
     private Rectangle lastPopupBounds = new Rectangle(100, 100, 300, 200);
 
     private JFrame popupFrame = null; // 用于记录当前的弹窗实例
+    private int activeTextFieldIndex = -1; // 用于跟踪当前激活的文本框索引
 
     private void addTextFieldPopupFunctionality() {
         for (int i = 0; i < textFields.length; i++) {
@@ -732,8 +733,9 @@ class MainFrame extends JFrame {
                 @Override
                 public void mouseClicked(MouseEvent e) {
                     if (SwingUtilities.isLeftMouseButton(e)) {
+                        activeTextFieldIndex = index; // 更新激活的文本框索引
                         if (popupFrame == null || !popupFrame.isVisible()) {
-                            showWordSelectionPopup(index);
+                            showWordSelectionPopup();
                         }
                     }
                 }
@@ -741,7 +743,7 @@ class MainFrame extends JFrame {
         }
     }
 
-    private void showWordSelectionPopup(int textFieldIndex) {
+    private void showWordSelectionPopup() {
         // 如果弹窗已存在且可见，则不重新创建
         if (popupFrame != null && popupFrame.isVisible()) {
             return;
@@ -759,13 +761,15 @@ class MainFrame extends JFrame {
             JButton wordButton = new JButton(word);
             popupFrame.add(wordButton);
 
-            // 点击词语按钮时将其添加到对应文本框
+            // 点击词语按钮时将其添加到当前激活的文本框
             wordButton.addActionListener(e -> {
-                String currentText = textFields[textFieldIndex].getText();
-                if (!currentText.isEmpty()) {
-                    currentText += ", ";
+                if (activeTextFieldIndex >= 0 && activeTextFieldIndex < textFields.length) {
+                    String currentText = textFields[activeTextFieldIndex].getText();
+                    if (!currentText.isEmpty()) {
+                        currentText += ", ";
+                    }
+                    textFields[activeTextFieldIndex].setText(currentText + word);
                 }
-                textFields[textFieldIndex].setText(currentText + word);
             });
         }
 
